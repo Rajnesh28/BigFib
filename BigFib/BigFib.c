@@ -37,65 +37,83 @@ typedef unsigned int bigNumN[];
 
 int bigAdd(bigNumN bigN0P, const bigNumN bigN1P, unsigned int maxN0Size);
 
+//Desc: Find the nth fibonacci number, or the one prior to overflow
+//Pre:  N>0, maxSize>0, and bNP must point to a valid space in memory
+//Post: Return the nth fibonacci number
 int bigFib(int n, int maxSize, unsigned **bNP) {
 
-	//Invalid argument check
+	//Check if the parameters are valid
 	if (n < 0 || maxSize < 0 || bNP == NULL){
 		errno = EINVAL;
 		return -1;
 	}
 	
-
-	
-	// Allocated space for a pointer to a memory address
+	// Allocated space for a pointer (bNa) to a memory address
 	unsigned* bNa = malloc(4*(1 + maxSize));
+	
+	//Check if the space was properly allocated
 	if (!bNa){
 		errno = ENOMEM;
 		return -1;
 	}
 	
+	// Allocated space for a pointer (bNb) to a memory address
 	unsigned* bNb = malloc(4*(1 + maxSize));
 
+	//Check if the space was properly allocated
 	if (!bNb){
 		errno = ENOMEM;
 		free(bNa);
 		return -1;
 	}
 	
+	//If maxsize is zero, just return 0
 	if (maxSize == 0){	
 		*bNa = 0;
 		*bNP = bNa;
 		return 0;
 	}	
 	
+	//If bNa exists then begin computation using recursive bigAdd
 	if (bNa) { 
 
+		//Allocate the bNa and bNb memory spaces at the first position to the
+		//respective fibonnaci values of F0, and F1
 		*bNa = 1;	
 		*(bNa+1) = 0;
 
 		*bNb = 1;
 		*(bNb+1) = 1;			
-
+			
+		//If we want 0th term, return 0
 		if(n==0){
-			*bNP = bNa;	//return F0
+			*bNP = bNa;	
 			free(bNb);
 			return 0;
 		}
+		
+		//If we want 1st term, return 1
 		if(n==1){
-			*bNP = bNb;	//return F1
+			*bNP = bNb;	
 			free(bNa);
 			return 1;
-		}			
-			
+		}		
+		
+		//Fibonacci function variable
 		int f;
 		
-		for(int i=2; i <= n; ++i){
+		//First two, n=0,1 are taken care of
+		for(int i=0; i <= n-2; ++i){
 			
 				f = bigAdd(bNa, bNb, maxSize);
+			
+				//If f = 1 return the number prior to overflow
 				if (f){
 					free(bNa);
-					return i-1;
+					return i+1;
 				}
+				
+				//If f = 0 continue to recurisively bigAdd
 				else if (!f){
 					*bNP = bNa;	
 					bNa = bNb;
@@ -103,6 +121,7 @@ int bigFib(int n, int maxSize, unsigned **bNP) {
 					continue;
 				}
 				
+				//If f = -1 error occurred, return -1
 				else if (f==-1){
 					errno = ENOMEM;
 					return -1;
@@ -112,6 +131,8 @@ int bigFib(int n, int maxSize, unsigned **bNP) {
 
 		}
 
+	//Free space and return
+	//This is from original code template from Professor Craig
 	free(bNa);
 	return n;
 }
